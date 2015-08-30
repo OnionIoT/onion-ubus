@@ -42,12 +42,23 @@ WifiScan () {
 }
 
 # function to setup wifi connection
+#	run 'wifisetup -help' for info on the arguments
 WifiSetup () {
 	# get the script arguments from the json
 	json_get_values args arguments
 
 	# call wifisetup with the arguments (and -u for json output)
 	wifisetup -u $args
+}
+
+# function to facilitate firmware updates
+#	run 'oupgrade -help' for info on the arguments
+OUpgrade () {
+	# get the script arguments from the json
+	json_get_values args arguments
+
+	# call oupgrade with the arguments (and -u for json output)
+	oupgrade -u $args
 }
 
 
@@ -57,11 +68,12 @@ WifiSetup () {
 
 jsonWifiScan='"wifiscan": { "device": "string" }'
 jsonWifiSetup='"wifisetup": { "arguments": ["string","string","string"] }'
+jsonOUpgrade='"oupgrade": { "arguments": ["string","string","string"] }'
 jsonStatus='"status": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonStatus }"
     ;;
     call)
 		case "$2" in
@@ -83,6 +95,14 @@ case "$1" in
 
 				# parse the json and run wifisetup
 				WifiSetup
+			;;
+			oupgrade)
+				# read the json arguments
+				read input
+				json_load "$input"
+
+				# parse the json and run wifisetup
+				OUpgrade
 			;;
 			status)
 				# dummy call for now
