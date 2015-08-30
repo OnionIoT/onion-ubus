@@ -41,17 +41,27 @@ WifiScan () {
 	json_dump
 }
 
+# function to setup wifi connection
+WifiSetup () {
+	# get the script arguments from the json
+	json_get_values args arguments
+
+	# call wifisetup with the arguments (and -u for json output)
+	wifisetup -u $args
+}
+
 
 
 ########################
 ##### Main Program #####
 
-jsonWifiscan='"wifiscan": { "device": "string" }'
+jsonWifiScan='"wifiscan": { "device": "string" }'
+jsonWifiSetup='"wifisetup": { "arguments": ["string","string","string"] }'
 jsonStatus='"status": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiscan, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonStatus }"
     ;;
     call)
 		case "$2" in
@@ -65,6 +75,14 @@ case "$1" in
 
 				# run the wifi scan
 				WifiScan $netDevice
+			;;
+			wifisetup)
+				# read the json arguments
+				read input
+				json_load "$input"
+
+				# parse the json and run wifisetup
+				WifiSetup
 			;;
 			status)
 				# dummy call for now
