@@ -23,9 +23,14 @@ WifiScan () {
 		val=${rest%%;*}
 		rest=${rest#*;}
 
-		#val now holds ssid:encr
+		# val now holds ssid:encr
 		ssid=${val%%:*}
 		auth=${val#*:}
+
+		# modify hidden networks to be an empty string
+		if [ "$ssid" == "unknown" ]; then
+			ssid=""
+		fi 
 
 		# create and populate object for this network
 		json_add_object
