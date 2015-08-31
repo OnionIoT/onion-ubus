@@ -71,10 +71,15 @@ OUpgrade () {
 ########################
 ##### Main Program #####
 
-jsonWifiScan='"wifiscan": { "device": "string" }'
-jsonWifiSetup='"wifisetup": { "arguments": ["string","string","string"] }'
-jsonOUpgrade='"oupgrade": { "arguments": ["string","string","string"] }'
-jsonStatus='"status": { }'
+cmdWifiScan="wifi-scan"
+cmdWifiSetup="wifi-setup"
+cmdOUpgrade="oupgrade"
+cmdStatus="status"
+
+jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
+jsonWifiSetup='"'"$cmdWifiSetup"'": { "arguments": ["string","string","string"] }'
+jsonOUpgrade='"'"$cmdOUpgrade"'": { "arguments": ["string","string","string"] }'
+jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
     list)
@@ -82,7 +87,7 @@ case "$1" in
     ;;
     call)
 		case "$2" in
-			wifiscan)
+			$cmdWifiScan)
 				# read the json arguments
 				read input;
 
@@ -93,7 +98,7 @@ case "$1" in
 				# run the wifi scan
 				WifiScan $netDevice
 			;;
-			wifisetup)
+			$cmdWifiSetup)
 				# read the json arguments
 				read input
 				json_load "$input"
@@ -101,7 +106,7 @@ case "$1" in
 				# parse the json and run wifisetup
 				WifiSetup
 			;;
-			oupgrade)
+			$cmdOUpgrade)
 				# read the json arguments
 				read input
 				json_load "$input"
@@ -109,7 +114,7 @@ case "$1" in
 				# parse the json and run wifisetup
 				OUpgrade
 			;;
-			status)
+			$cmdStatus)
 				# dummy call for now
 				echo '{"status":"good"}'
 		;;
