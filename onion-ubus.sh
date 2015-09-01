@@ -49,11 +49,28 @@ WifiScan () {
 # function to setup wifi connection
 #	run 'wifisetup -help' for info on the arguments
 WifiSetup () {
-	# get the script arguments from the json
-	json_get_values args arguments
+	local arguments=""
+	
+	# read through all the arguments in the json object
+	json_get_keys keys
 
+	for key in $keys
+	do
+		# get the key value
+		json_get_var val "$key"
+		
+		if 	[ "$key" == "ssid" ] ||
+			[ "$key" == "password" ];
+		then
+			val="\"$val\""
+		fi
+
+		arguments="$arguments-$key $val "
+	done
+	
 	# call wifisetup with the arguments (and -u for json output)
-	wifisetup -u $args
+	cmd="wifisetup -u $arguments"
+	eval "$cmd"
 }
 
 # function to facilitate firmware updates
@@ -77,7 +94,7 @@ cmdOUpgrade="oupgrade"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
-jsonWifiSetup='"'"$cmdWifiSetup"'": { "arguments": ["string","string","string"] }'
+jsonWifiSetup='"'"$cmdWifiSetup"'": { "argument": "value" }'
 jsonOUpgrade='"'"$cmdOUpgrade"'": { "arguments": ["string","string","string"] }'
 jsonStatus='"'"$cmdStatus"'": { }'
 
