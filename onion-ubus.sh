@@ -68,13 +68,13 @@ WifiScan () {
 	json_dump
 }
 
-# function to parse json arguments object
+# function to parse json params object
 # returns a string via echo
 _ParseArgumentsObject () {
 	local retArgumentString=""
 
 	# select the arguments object
-	json_select arguments
+	json_select params
 	
 	# read through all the arguments
 	json_get_keys keys
@@ -101,6 +101,7 @@ _ParseArgumentsObject () {
 # function to setup wifi connection
 #	run 'wifisetup -help' for info on the arguments
 WifiSetup () {
+	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject)
 	
 	# call wifisetup with the arguments (and -u for json output)
@@ -111,11 +112,12 @@ WifiSetup () {
 # function to facilitate firmware updates
 #	run 'oupgrade -help' for info on the arguments
 OUpgrade () {
-	# get the script arguments from the json
-	json_get_values args arguments
+	# parse the arguments object
+	local argumentString=$(_ParseArgumentsObject)
 
 	# call oupgrade with the arguments (and -u for json output)
-	oupgrade -u $args
+	cmd="oupgrade -u $argumentString"
+	eval "$cmd"
 }
 
 
@@ -129,8 +131,8 @@ cmdOUpgrade="oupgrade"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
-jsonWifiSetup='"'"$cmdWifiSetup"'": { "arguments": { "key": "value" } }'
-jsonOUpgrade='"'"$cmdOUpgrade"'": { "arguments": ["string","string","string"] }'
+jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } }'
+jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
 jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
