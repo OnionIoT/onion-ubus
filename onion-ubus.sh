@@ -68,10 +68,10 @@ WifiScan () {
 	json_dump
 }
 
-# function to setup wifi connection
-#	run 'wifisetup -help' for info on the arguments
-WifiSetup () {
-	local argumentString=""
+# function to parse json arguments object
+# returns a string via echo
+_ParseArgumentsObject () {
+	local retArgumentString=""
 
 	# select the arguments object
 	json_select arguments
@@ -84,14 +84,24 @@ WifiSetup () {
 		# get the key value
 		json_get_var val "$key"
 		
+		# specific key modifications
 		if 	[ "$key" == "ssid" ] ||
 			[ "$key" == "password" ];
 		then
+			# add double quotes around ssid and password
 			val="\"$val\""
 		fi
 
-		argumentString="$argumentString-$key $val "
+		retArgumentString="$retArgumentString-$key $val "
 	done
+
+	echo "$retArgumentString"
+}
+
+# function to setup wifi connection
+#	run 'wifisetup -help' for info on the arguments
+WifiSetup () {
+	local argumentString=$(_ParseArgumentsObject)
 	
 	# call wifisetup with the arguments (and -u for json output)
 	cmd="wifisetup -u $argumentString"
@@ -156,7 +166,10 @@ case "$1" in
 			;;
 			$cmdOUpgrade)
 				# read the json arguments
-				read input
+				read input;
+				Log "Json argument: $input"
+
+				# parse the json
 				json_load "$input"
 
 				# parse the json and run wifisetup
