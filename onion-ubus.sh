@@ -2,6 +2,28 @@
 
 . /usr/share/libubox/jshn.sh
 
+bLogEnabled=0
+logFile="/tmp/$logName"
+
+# function to setup logging
+SetupLog () {
+	if [ $bLogEnabled == 1 ]; then
+		if [ -f $logFile ]; then
+			rm -rf $logFile
+		fi
+
+		touch $logFile
+	fi
+}
+
+# function to perform logging
+#	argument 1: message to be logged
+Log () {
+	if [ $bLogEnabled == 1 ]; then
+		echo "$1" >> $logFile
+	fi
+}
+
 
 # function to scan for wifi networks
 #	argument 1: device for iwinfo
@@ -106,10 +128,13 @@ case "$1" in
 		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonStatus }"
     ;;
     call)
+		Log "Function: call, Method: $2"
+
 		case "$2" in
 			$cmdWifiScan)
 				# read the json arguments
 				read input;
+				Log "Json argument: $input"
 
 				# parse the json
 				json_load "$input"
@@ -120,7 +145,10 @@ case "$1" in
 			;;
 			$cmdWifiSetup)
 				# read the json arguments
-				read input
+				read input;
+				Log "Json argument: $input"
+
+				# parse the json
 				json_load "$input"
 
 				# parse the json and run wifisetup
