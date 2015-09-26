@@ -123,28 +123,34 @@ OUpgrade () {
 # function to return an array of all directories
 # 	argument 1: directory to check
 DirList () {
-	# go to the directory
-	cd $1
-	
-	# grab all the directories and correct the formatting                          
-	dirs=`find . -type d -maxdepth 1 -mindepth 1 | sed -e 's/\.\///' | tr '\n' ';'`
-	
 	# json setup           
 	json_init              
 	
 	# create the directory array
 	json_add_array directories
-	
-	# split the list of directories
-	rest=$dirs
-	while [ "$rest" != "" ]
-	do
-		val=${rest%%;*}
-		rest=${rest#*;}
 
-		# val now holds a directory
-		json_add_string "dir" "$val"
-	done
+	#check if the directory exists
+	if [ -d "$dir" ]
+	then
+		# go to the directory
+		cd $1
+		
+		# grab all the directories and correct the formatting                          
+		dirs=`find . -type d -maxdepth 1 -mindepth 1 | sed -e 's/\.\///' | tr '\n' ';'`
+		
+		
+		
+		# split the list of directories
+		rest=$dirs
+		while [ "$rest" != "" ]
+		do
+			val=${rest%%;*}
+			rest=${rest#*;}
+
+			# val now holds a directory
+			json_add_string "dir" "$val"
+		done
+	fi
 	    
 	# finish the array
 	json_close_array
