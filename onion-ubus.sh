@@ -123,15 +123,20 @@ OUpgrade () {
 # function to return an array of all directories
 # 	argument 1: directory to check
 DirList () {
+	bExists=0
+
 	# json setup           
 	json_init              
 	
 	# create the directory array
 	json_add_array directories
-
+	
 	#check if the directory exists
-	if [ -d "$dir" ]
+	if [ -d $1 ]
 	then
+		# denote that the directory exists
+		bExists=1
+
 		# go to the directory
 		cd $1
 		
@@ -149,11 +154,14 @@ DirList () {
 
 			# val now holds a directory
 			json_add_string "dir" "$val"
-		done
+		done	
 	fi
-	    
+
 	# finish the array
 	json_close_array
+	
+	# add the note that the directory exists
+	json_add_boolean exists $bExists
 
 	# print the json
 	json_dump
