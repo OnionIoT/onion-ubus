@@ -120,6 +120,38 @@ OUpgrade () {
 	eval "$cmd"
 }
 
+# function to return an array of all directories
+# 	argument 1: directory to check
+DirList () {
+	# go to the directory
+	cd $1
+	
+	# grab all the directories and correct the formatting                          
+	dirs=`find . -type d -maxdepth 1 -mindepth 1 | sed -e 's/\.\///' | tr '\n' ';'`
+	
+	# json setup           
+	json_init              
+	
+	# create the directory array
+	json_add_array directories
+	
+	# split the list of directories
+	rest=$dirs
+	while [ "$rest" != "" ]
+	do
+		val=${rest%%;*}
+		rest=${rest#*;}
+
+		# val now holds a directory
+		json_add_string "dir" "$val"
+	done
+	    
+	# finish the array
+	json_close_array
+
+	# print the json
+	json_dump
+}
 
 
 ########################
@@ -128,16 +160,18 @@ OUpgrade () {
 cmdWifiScan="wifi-scan"
 cmdWifiSetup="wifi-setup"
 cmdOUpgrade="oupgrade"
+cmdDirList="dir-list"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
 jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } }'
 jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
+jsonDirList='"'"$cmdDirList"'": { "directory": "value" }'
 jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -174,8 +208,20 @@ case "$1" in
 				# parse the json
 				json_load "$input"
 
-				# parse the json and run wifisetup
+				# parse the json and run oupgrade
 				OUpgrade
+			;;
+			$cmdDirList)
+				# read the json arguments
+				read input;
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+				json_get_var targetDir directory
+
+				# run directory list
+				DirList $targetDir
 			;;
 			$cmdStatus)
 				# dummy call for now
