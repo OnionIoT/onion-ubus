@@ -126,12 +126,12 @@ DirList () {
 	bExists=0
 
 	# json setup           
-	json_init              
+	json_init
 	
 	# create the directory array
 	json_add_array directories
 	
-	#check if the directory exists
+	# check if the directory exists
 	if [ -d $1 ]
 	then
 		# denote that the directory exists
@@ -142,8 +142,6 @@ DirList () {
 		
 		# grab all the directories and correct the formatting                          
 		dirs=`find . -type d -maxdepth 1 -mindepth 1 | sed -e 's/\.\///' | tr '\n' ';'`
-		
-		
 		
 		# split the list of directories
 		rest=$dirs
@@ -167,6 +165,64 @@ DirList () {
 	json_dump
 }
 
+# function to read and respond with possible Omega LED settings
+#	argument 1: path to trigger file
+omegaLedRead () {
+	# read the possible trigger modes
+	modes=`cat $1`
+	modes=`echo $modes | sed -e 's/\[//g' -e 's/\]//g'`
+
+	# create the trigger mode array
+	json_add_array triggers
+
+	# add each mode
+	for mode in $modes
+	do
+		json_add_string "mode" "$mode"
+	done
+
+	# finish the array
+	json_close_array
+}
+
+# function to set Omega LED trigger
+#	argument 1: path to trigger file
+#	argument 2: new trigger to set
+omegaLedSet () {
+	# set the trigger
+	echo $2 > $1
+
+	# output the selected trigger
+	json_add_string "trigger" "$2"
+}
+
+# function to set the Omega LED
+omegaLed () {
+	triggerFile="/sys/class/leds/onion:amber:system/trigger"
+
+	# check the operations
+	json_get_var readTriggers read_triggers
+	json_get_var triggerSel set_trigger
+
+	# init the output json
+	json_init
+
+	# check if returning the possible trigger options (check this)
+	if 	[ "$readTriggers" != "" ] &&
+		[ "$readTriggers" == 1 ]; 
+	then
+		omegaLedRead $triggerFile
+	fi
+
+	# check if setting the trigger
+	if [ "$triggerSel" != "" ]; then
+		omegaLedSet $triggerFile $triggerSel
+	fi
+
+	# print the json
+	json_dump
+}
+
 
 ########################
 ##### Main Program #####
@@ -175,17 +231,19 @@ cmdWifiScan="wifi-scan"
 cmdWifiSetup="wifi-setup"
 cmdOUpgrade="oupgrade"
 cmdDirList="dir-list"
+cmdOmegaLed="omega-led"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
 jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } }'
 jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
 jsonDirList='"'"$cmdDirList"'": { "directory": "value" }'
+jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true }'
 jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -236,6 +294,17 @@ case "$1" in
 
 				# run directory list
 				DirList $targetDir
+			;;
+			$cmdOmegaLed)
+				# read the json arguments
+				read input
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and perform the LED actions
+				omegaLed
 			;;
 			$cmdStatus)
 				# dummy call for now
