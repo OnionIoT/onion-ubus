@@ -1,29 +1,7 @@
 #!/bin/sh
 
-. /usr/share/libubox/jshn.sh
-
-bLogEnabled=0
-logFile="/tmp/$logName"
-
-# function to setup logging
-SetupLog () {
-	if [ $bLogEnabled == 1 ]; then
-		if [ -f $logFile ]; then
-			rm -rf $logFile
-		fi
-
-		touch $logFile
-	fi
-}
-
-# function to perform logging
-#	argument 1: message to be logged
-Log () {
-	if [ $bLogEnabled == 1 ]; then
-		echo "$1" >> $logFile
-	fi
-}
-
+# include the Onion sh lib
+. /usr/lib/onion/lib.sh
 
 # function to scan for wifi networks
 #	argument 1: device for iwinfo
@@ -66,36 +44,6 @@ WifiScan () {
 
 	# print the json
 	json_dump
-}
-
-# function to parse json params object
-# returns a string via echo
-_ParseArgumentsObject () {
-	local retArgumentString=""
-
-	# select the arguments object
-	json_select params
-	
-	# read through all the arguments
-	json_get_keys keys
-
-	for key in $keys
-	do
-		# get the key value
-		json_get_var val "$key"
-		
-		# specific key modifications
-		if 	[ "$key" == "ssid" ] ||
-			[ "$key" == "password" ];
-		then
-			# add double quotes around ssid and password
-			val="\"$val\""
-		fi
-
-		retArgumentString="$retArgumentString-$key $val "
-	done
-
-	echo "$retArgumentString"
 }
 
 # function to setup wifi connection
@@ -223,6 +171,17 @@ omegaLed () {
 	json_dump
 }
 
+# function to run fast-gpio application
+FastGpio () {
+	# parse the arguments object
+	local argumentString=$(_ParseArgumentsObject)
+	
+	# call wifisetup with the arguments (and -u for json output)
+	cmd="fast-gpio -u $argumentString"
+	Log "$cmd"
+	#eval "$cmd"
+}
+
 
 ########################
 ##### Main Program #####
@@ -232,6 +191,7 @@ cmdWifiSetup="wifi-setup"
 cmdOUpgrade="oupgrade"
 cmdDirList="dir-list"
 cmdOmegaLed="omega-led"
+cmdFastGpio="fast-gpio"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
@@ -239,11 +199,13 @@ jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } }'
 jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
 jsonDirList='"'"$cmdDirList"'": { "directory": "value" }'
 jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true }'
+jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } }'
+
 jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonFastGpio, $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -306,6 +268,17 @@ case "$1" in
 				# parse the json and perform the LED actions
 				omegaLed
 			;;
+			$cmdFastGpio)
+				# read the json arguments
+				read input
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and perform the fast-gpio actions
+				FastGpio
+			;;
 			$cmdStatus)
 				# dummy call for now
 				echo '{"status":"good"}'
@@ -313,3 +286,6 @@ case "$1" in
 		esac
     ;;
 esac
+
+# take care of the log file
+CloseLog
