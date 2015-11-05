@@ -174,12 +174,14 @@ omegaLed () {
 # function to run fast-gpio application
 FastGpio () {
 	# parse the arguments object
-	local argumentString=$(_ParseArgumentsObject)
+	local argumentString=$(_ParseArgumentsObject "nodash")
+	argumentString=`echo $argumentString | sed -e 's/_/-/'`
+	Log "arguments: $argumentString"
 	
 	# call wifisetup with the arguments (and -u for json output)
 	cmd="fast-gpio -u $argumentString"
 	Log "$cmd"
-	#eval "$cmd"
+	eval "$cmd"
 }
 
 
