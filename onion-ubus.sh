@@ -184,6 +184,27 @@ FastGpio () {
 	eval "$cmd"
 }
 
+# function to find all I2C devices on the bus
+I2cScan () {
+	# find all slave addresses on i2c bus, format so they're all on one line, separated by multiple spaces
+	addrs=$(i2cdetect -y 0 | tail -n +2 | sed -e 's/^[0-9][0-9]://' -e 's/ --//g' -e 's/\([0-9abcdef][0-9abcdef]\)/0x\1/g' | tr '\n' ' ')
+
+	# generate a json array using text
+	json='{"devices":['
+	
+	# add each device address to the array
+	for addr in $addrs
+	do
+		json="$json\"$addr\","
+	done
+
+	json=$(echo $json | sed -e 's/.$//')	#remove last comma
+	json="$json]}'"
+
+	# print the json
+	echo "$json"
+}
+
 
 ########################
 ##### Main Program #####
@@ -194,6 +215,7 @@ cmdOUpgrade="oupgrade"
 cmdDirList="dir-list"
 cmdOmegaLed="omega-led"
 cmdFastGpio="fast-gpio"
+cmdI2cScan="i2c-scan"
 cmdStatus="status"
 
 jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
@@ -202,12 +224,13 @@ jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
 jsonDirList='"'"$cmdDirList"'": { "directory": "value" }'
 jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true }'
 jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } }'
+jsonI2cScan='"'"$cmdI2cScan"'": { }'
 
 jsonStatus='"'"$cmdStatus"'": { }'
 
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonFastGpio, $jsonStatus }"
+		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonFastGpio, $jsonI2cScan, $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -280,6 +303,10 @@ case "$1" in
 
 				# parse the json and perform the fast-gpio actions
 				FastGpio
+			;;
+			$cmdI2cScan)
+				# call the i2c-scan function
+				I2cScan	
 			;;
 			$cmdStatus)
 				# dummy call for now
