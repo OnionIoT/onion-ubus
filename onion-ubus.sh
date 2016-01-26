@@ -2,6 +2,7 @@
 
 # include the Onion sh lib
 . /usr/lib/onion/lib.sh
+bLogEnabled=1 #DBG
 
 # function to scan for wifi networks
 #	argument 1: device for iwinfo
@@ -54,6 +55,22 @@ WifiSetup () {
 	
 	# call wifisetup with the arguments (and -u for json output)
 	cmd="wifisetup -u $argumentString"
+	eval "$cmd"
+}
+
+# function to setup wdb40 wireless network manager
+#	run 'wdb40setup -help' for info on the arguments
+Wdb40Setup () {
+	# find the command
+	local cmd=""
+	json_get_var cmd "command"
+
+	# parse the arguments object
+	local argumentString=$(_ParseArgumentsObject nodash)
+	
+	# call wifisetup with the arguments (and -u for json output)
+	Log "Running wdb40setup $cmd $argumentString"
+	cmd="wdb40setup --json $cmd $argumentString"
 	eval "$cmd"
 }
 
@@ -209,8 +226,10 @@ I2cScan () {
 ########################
 ##### Main Program #####
 
+# define the commands
 cmdWifiScan="wifi-scan"
 cmdWifiSetup="wifi-setup"
+cmdWdb40Setup="wdb40-setup"
 cmdOUpgrade="oupgrade"
 cmdDirList="dir-list"
 cmdOmegaLed="omega-led"
@@ -218,19 +237,36 @@ cmdFastGpio="fast-gpio"
 cmdI2cScan="i2c-scan"
 cmdStatus="status"
 
-jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" }'
-jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } }'
-jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } }'
-jsonDirList='"'"$cmdDirList"'": { "directory": "value" }'
-jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true }'
-jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } }'
-jsonI2cScan='"'"$cmdI2cScan"'": { }'
+
+# define the command input
+jsonWifiScan='"'"$cmdWifiScan"'": { "device": "string" },'
+jsonWifiSetup='"'"$cmdWifiSetup"'": { "params": { "key": "value" } },'
+jsonWdb40Setup='"'"$cmdWdb40Setup"'": { "command":"value", "params": { "key": "value" } },'
+jsonOUpgrade='"'"$cmdOUpgrade"'": { "params": { "key": "value" } },'
+jsonDirList='"'"$cmdDirList"'": { "directory": "value" },'
+jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true },'
+jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } },'
+jsonI2cScan='"'"$cmdI2cScan"'": { },'
 
 jsonStatus='"'"$cmdStatus"'": { }'
 
+
+## ensure command packages are installed
+# wifisetup
+if [ ! -e "/usr/bin/wifisetup" ]; then
+	jsonWifiSetup=""
+fi
+
+# wdb40setup
+if [ ! -e "/usr/bin/wdb40setup" ]; then
+	jsonWdb40Setup=""
+fi
+
+
+## parse command line arguments
 case "$1" in
     list)
-		echo "{ $jsonWifiScan, $jsonWifiSetup, $jsonOUpgrade, $jsonDirList, $jsonOmegaLed, $jsonFastGpio, $jsonI2cScan, $jsonStatus }"
+		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -258,6 +294,17 @@ case "$1" in
 
 				# parse the json and run wifisetup
 				WifiSetup
+			;;
+			$cmdWdb40Setup)
+				# read the json arguments
+				read input;
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and run wifisetup
+				Wdb40Setup
 			;;
 			$cmdOUpgrade)
 				# read the json arguments
