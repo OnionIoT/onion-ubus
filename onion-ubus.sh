@@ -2,7 +2,7 @@
 
 # include the Onion sh lib
 . /usr/lib/onion/lib.sh
-bLogEnabled=1 #DBG
+
 
 # function to scan for wifi networks
 #	argument 1: device for iwinfo
