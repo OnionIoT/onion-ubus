@@ -222,6 +222,142 @@ I2cScan () {
 	echo "$json"
 }
 
+# function to program the RGB LED on the Expansion Dock
+RgbLed () {
+	# find the command 
+	json_get_var cmd "command"
+	local colour=""
+
+	if [ "$cmd" == "set" ]; then
+		# select the parameters
+		json_select params
+		json_get_keys keys
+
+		# read the colour specified in the parameters
+		for key in $keys
+		do
+			if 	[ "$key" == "colour" ] ||
+				[ "$key" == "color" ];
+			then
+				# get the key value
+				json_get_var colour "$key"
+			fi
+		done
+
+		# perfrom the rgb led setup
+		if [ "$colour" != "" ]; then
+			expled $colour >& /dev/null
+			echo "{\"rgb-led\":\"$colour\"}"
+		fi
+	fi
+
+	# error-checking
+	if [ "$colour" == "" ]; then
+		echo "{\"success\":False}"
+	fi
+}
+
+### functions to control the Omega GPIOs
+GpioBase="/sys/class/gpio"
+
+# get the value of a GPIO
+# 	$1 	- gpio pin
+#	return value via echo
+GpioCtlGet () {
+	# get the value
+	local value=$(cat $GpioBase/gpio$1/value)
+
+	echo "$value"
+}
+
+# get the direction of a GPIO
+# 	$1 	- gpio pin
+#	return value via echo
+GpioCtlGetDirection () {
+	# read the sysfs file
+	local dir=$(cat $GpioBase/gpio$1/direction)
+
+	echo "$dir"
+}
+
+GpioCtl () {
+	# find the command 
+	json_get_var cmd command
+	local gpio=""
+	local value=""
+
+	## read the parameters
+	# select the parameters
+	json_select params
+	json_get_keys keys
+
+	# read the colour specified in the parameters
+	for key in $keys
+	do
+		if 	[ "$key" == "gpio" ]; then
+			# get the key value
+			json_get_var gpio "$key"
+		elif [ "$key" == "value" ]; then
+			# get the key value
+			json_get_var value "$key"
+		fi
+	done
+
+
+	if [ "$gpio" != "" ]; then
+		# export the pin
+		echo "$gpio" > $GpioBase/export
+
+		# perform the action
+		case "$cmd" in 
+			"set")
+				# set the gpio to the selected value
+				if [ "$value" == "0" ]; then
+					echo "0" > $GpioBase/gpio$gpio/value
+				else 
+					echo "1" > $GpioBase/gpio$gpio/value
+				fi
+
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"value\":\"$value\"}"
+			;;
+			"get")
+				# get the value
+				value=$(GpioCtlGet $gpio)
+
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"value\":\"$value\"}"
+			;;
+			"set-direction")
+				local dir="out"
+				if [ "$value" == "input" ]; then
+					dir="in"
+				fi
+				echo "$dir" > $GpioBase/gpio$gpio/direction
+
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"direction\":\"$dir\"}"
+			;;
+			"get-direction")
+				value=$(GpioCtlGetDirection $gpio)
+
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"direction\":\"$value\"}"
+			;;
+			"status")
+				local val=$(GpioCtlGet $gpio)
+				local dir=$(GpioCtlGetDirection $gpio)
+
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"value\":\"$val\", \"direction\":\"$dir\"}"
+			;;
+			*)
+				# unrecognized command
+				echo "{\"success\":False}"
+			;;
+		esac
+
+		# unexport the pin
+		echo "$gpio" > $GpioBase/unexport
+
+	fi
+}
+
 
 ########################
 ##### Main Program #####
@@ -235,6 +371,9 @@ cmdDirList="dir-list"
 cmdOmegaLed="omega-led"
 cmdFastGpio="fast-gpio"
 cmdI2cScan="i2c-scan"
+cmdRgbLed="rgb-led"
+cmdGpio="gpio"
+
 cmdStatus="status"
 
 
@@ -247,6 +386,8 @@ jsonDirList='"'"$cmdDirList"'": { "directory": "value" },'
 jsonOmegaLed='"'"$cmdOmegaLed"'": { "set_trigger": "value", "read_triggers": true },'
 jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } },'
 jsonI2cScan='"'"$cmdI2cScan"'": { },'
+jsonRgbLed='"'"$cmdRgbLed"'": { "command":"value", "params": { "key": "value" } },'
+jsonGpio='"'"$cmdGpio"'": { "command":"value", "params": { "key": "value" } },'
 
 jsonStatus='"'"$cmdStatus"'": { }'
 
@@ -266,7 +407,7 @@ fi
 ## parse command line arguments
 case "$1" in
     list)
-		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonStatus }"
+		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonRgbLed $jsonGpio $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -354,6 +495,28 @@ case "$1" in
 			$cmdI2cScan)
 				# call the i2c-scan function
 				I2cScan	
+			;;
+			$cmdRgbLed)
+				# read the json arguments
+				read input
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and perform the rgb-led actions
+				RgbLed
+			;;
+			$cmdGpio)
+				# read the json arguments
+				read input
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and perform the rgb-led actions
+				GpioCtl
 			;;
 			$cmdStatus)
 				# dummy call for now
