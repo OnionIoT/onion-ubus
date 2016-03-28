@@ -272,13 +272,20 @@ GpioCtlGet () {
 
 # get the direction of a GPIO
 # 	$1 	- gpio pin
-#	return value via echo
+#	return direction via echo
 GpioCtlGetDirection () {
 	# read the sysfs file
 	local dir=$(cat $GpioBase/gpio$1/direction)
 
-	echo "$dir"
+	if [ "$dir" == "in" ]; then
+		ret="input"
+	elif [ "$dir" == "out" ]; then
+		ret="output"
+	fi
+
+	echo "$ret"
 }
+
 
 GpioCtl () {
 	# find the command 
@@ -328,12 +335,14 @@ GpioCtl () {
 			;;
 			"set-direction")
 				local dir="out"
-				if [ "$value" == "input" ]; then
+				if 	[ "$value" == "input" ] ||
+					[ "$value" == "in" ]; 
+				then
 					dir="in"
 				fi
 				echo "$dir" > $GpioBase/gpio$gpio/direction
 
-				echo "{\"success\":True, \"pin\":\"$gpio\", \"direction\":\"$dir\"}"
+				echo "{\"success\":True, \"pin\":\"$gpio\", \"direction\":\"$dir\", \"recv_direction\": \"$value\"}"
 			;;
 			"get-direction")
 				value=$(GpioCtlGetDirection $gpio)

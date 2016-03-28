@@ -232,9 +232,11 @@ Sample Return:
 {
         "success": true,
         "pin": "7",
-        "direction": "out"
+        "direction": "output"
 }
 ```
+
+The `direction` value will be either **`input` or `output`**
 
 
 ## Set Direction Command
