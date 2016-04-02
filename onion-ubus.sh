@@ -70,7 +70,7 @@ Wdb40Setup () {
 	
 	# call wifisetup with the arguments (and -u for json output)
 	Log "Running wdb40setup $cmd $argumentString"
-	cmd="wdb40setup --json $cmd $argumentString"
+	cmd="wifisetup --json $cmd $argumentString"
 	eval "$cmd"
 }
 
@@ -408,7 +408,7 @@ if [ ! -e "/usr/bin/wifisetup" ]; then
 fi
 
 # wdb40setup
-if [ ! -e "/usr/bin/wdb40setup" ]; then
+if [ ! -e "/usr/bin/wdb40" ]; then
 	jsonWdb40Setup=""
 fi
 
