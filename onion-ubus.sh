@@ -367,6 +367,21 @@ GpioCtl () {
 	fi
 }
 
+LaunchProcess () {
+	# find the command 
+	json_get_var cmd command
+
+	# set the command to run in the background
+	#cmd="$cmd &"
+
+	# debug
+	echo "{\"resp\": \"Command to launch in background: $cmd\"}"
+
+	# run the command
+	Log "Running command: '$cmd'"
+	`$cmd &`
+}
+
 
 ########################
 ##### Main Program #####
@@ -382,6 +397,7 @@ cmdFastGpio="fast-gpio"
 cmdI2cScan="i2c-scan"
 cmdRgbLed="rgb-led"
 cmdGpio="gpio"
+cmdLaunchProcess="launch-process"
 
 cmdStatus="status"
 
@@ -397,6 +413,8 @@ jsonFastGpio='"'"$cmdFastGpio"'": { "params": { "key": "value" } },'
 jsonI2cScan='"'"$cmdI2cScan"'": { },'
 jsonRgbLed='"'"$cmdRgbLed"'": { "command":"value", "params": { "key": "value" } },'
 jsonGpio='"'"$cmdGpio"'": { "command":"value", "params": { "key": "value" } },'
+#jsonLaunchProcess='"'"$cmdLaunchProcess"'": { "command":"value", "params": { "key": "value" } },'
+jsonLaunchProcess='"'"$cmdLaunchProcess"'": { "command":"value" },'
 
 jsonStatus='"'"$cmdStatus"'": { }'
 
@@ -416,7 +434,7 @@ fi
 ## parse command line arguments
 case "$1" in
     list)
-		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonRgbLed $jsonGpio $jsonStatus }"
+		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonRgbLed $jsonGpio $jsonLaunchProcess $jsonStatus }"
     ;;
     call)
 		Log "Function: call, Method: $2"
@@ -524,8 +542,19 @@ case "$1" in
 				# parse the json
 				json_load "$input"
 
-				# parse the json and perform the rgb-led actions
+				# parse the json and perform the gpio actions
 				GpioCtl
+			;;
+			$cmdLaunchProcess)
+				# read the json arguments
+				read input
+				Log "Json argument: $input"
+
+				# parse the json
+				json_load "$input"
+
+				# parse the json and perform the launch-process actions
+				LaunchProcess
 			;;
 			$cmdStatus)
 				# dummy call for now
