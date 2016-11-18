@@ -5,11 +5,68 @@
 
 
 # function to scan for wifi networks
-#	argument 1: device for iwinfo
+#   argument 1: device for iwinfo
 WifiScan () {
+
+	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA2" ];
+	then
+		(Omega2WifiScan "$1")
+	else
+		(Omega1WifiScan "$1")
+	fi
+}
+
+Omega2WifiScan () {
+	# json setup      
+	json_init
+	
+	json_add_array results
+
+	iwpriv $1 set SiteSurvey=1
+
+	sleep 1
+
+	line=1
+
+	var=$(iwpriv $1 get_site_survey | grep '^[0-9]' | sed -n "${line}p")
+	while [ "$var" != "" ]
+	do
+		var=$(iwpriv $1 get_site_survey | grep '^[0-9]' | sed -n "${line}p")
+		ch=$(echo "${var:0:3}" | xargs)
+		ssid=$(echo "${var:4:32}" | xargs)
+		bssid=$(echo "${var:37:19}" | xargs)
+		security=$(echo "${var:57:22}" | xargs)
+		encryption=${security%%/*}
+		auth=${security#*/}
+		signal=$(echo "${var:80:8}" | xargs)
+		wmode=$(echo "${var:89:7}" | xargs)
+		extch=$(echo "${var:97:6}" | xargs)
+		if [ "$ssid" != "" ]; then
+			json_add_object
+			json_add_string "channel" "$ch"
+			json_add_string "ssid" "$ssid"
+			json_add_string "bssid" "$bssid"
+			json_add_string "authentication" "$auth"
+			json_add_string "encryption" "$encryption"
+			json_add_string "signalStrength" "$signal"
+			json_add_string "wirelessMode" "$wmode"
+			json_add_string "ext-ch" "$extch"
+			json_close_object
+		fi
+		line=$((line + 1))
+	done
+
+	# finish the array
+	json_close_array
+
+	# print the json
+	json_dump
+}
+
+Omega1WifiScan () {
 	# scan for networks and do some formatting to isolate the ssid and encryption type
 	#	networks looks like ssid1:encr1;ssid2:encr2;ssid3:encr3
-	networks=$(iwinfo $1 scan | grep 'ESSID\|Encryption' | awk '{printf "%s", $0; if (getline) print " " $0; else printf "\n"}' | sed -e 's/[[:space:]]*E/E/g' -e 's/\"//g' -e 's/ESSID\: //g' -e 's/Encryption\: /:/g' -e 's/$/;/' |  sed -e ':a;N;$!ba;s/\n//g')
+	networks=$(iwinfo wlan0 scan | grep 'ESSID\|Encryption' | awk '{printf "%s", $0; if (getline) print " " $0; else printf "\n"}' | sed -e 's/[[:space:]]*E/E/g' -e 's/\"//g' -e 's/ESSID\: //g' -e 's/Encryption\: /:/g' -e 's/$/;/' |  sed -e ':a;N;$!ba;s/\n//g')
 
 	# json setup      
 	json_init
@@ -48,7 +105,7 @@ WifiScan () {
 }
 
 # function to setup wifi connection
-#	run 'wifisetup -help' for info on the arguments
+#   run 'wifisetup -help' for info on the arguments
 WifiSetup () {
 	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject)
@@ -59,7 +116,7 @@ WifiSetup () {
 }
 
 # function to setup wdb40 wireless network manager
-#	run 'wdb40setup -help' for info on the arguments
+#   run 'wdb40setup -help' for info on the arguments
 Wdb40Setup () {
 	# find the command
 	local cmd=""
@@ -75,7 +132,7 @@ Wdb40Setup () {
 }
 
 # function to facilitate firmware updates
-#	run 'oupgrade -help' for info on the arguments
+#   run 'oupgrade -help' for info on the arguments
 OUpgrade () {
 	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject)
@@ -86,7 +143,7 @@ OUpgrade () {
 }
 
 # function to return an array of all directories
-# 	argument 1: directory to check
+#   argument 1: directory to check
 DirList () {
 	bExists=0
 
@@ -117,7 +174,7 @@ DirList () {
 
 			# val now holds a directory
 			json_add_string "dir" "$val"
-		done	
+		done    
 	fi
 
 	# finish the array
@@ -131,7 +188,7 @@ DirList () {
 }
 
 # function to read and respond with possible Omega LED settings
-#	argument 1: path to trigger file
+#   argument 1: path to trigger file
 omegaLedRead () {
 	# read the possible trigger modes
 	modes=`cat $1`
@@ -151,8 +208,8 @@ omegaLedRead () {
 }
 
 # function to set Omega LED trigger
-#	argument 1: path to trigger file
-#	argument 2: new trigger to set
+#   argument 1: path to trigger file
+#   argument 2: new trigger to set
 omegaLedSet () {
 	# set the trigger
 	echo $2 > $1
@@ -173,7 +230,7 @@ omegaLed () {
 	json_init
 
 	# check if returning the possible trigger options (check this)
-	if 	[ "$readTriggers" != "" ] &&
+	if  [ "$readTriggers" != "" ] &&
 		[ "$readTriggers" == 1 ]; 
 	then
 		omegaLedRead $triggerFile
@@ -215,7 +272,7 @@ I2cScan () {
 		json="$json\"$addr\","
 	done
 
-	json=$(echo $json | sed -e 's/.$//')	#remove last comma
+	json=$(echo $json | sed -e 's/.$//')    #remove last comma
 	json="$json]}'"
 
 	# print the json
@@ -236,7 +293,7 @@ RgbLed () {
 		# read the colour specified in the parameters
 		for key in $keys
 		do
-			if 	[ "$key" == "colour" ] ||
+			if  [ "$key" == "colour" ] ||
 				[ "$key" == "color" ];
 			then
 				# get the key value
@@ -261,8 +318,8 @@ RgbLed () {
 GpioBase="/sys/class/gpio"
 
 # get the value of a GPIO
-# 	$1 	- gpio pin
-#	return value via echo
+#   $1  - gpio pin
+#   return value via echo
 GpioCtlGet () {
 	# get the value
 	local value=$(cat $GpioBase/gpio$1/value)
@@ -271,8 +328,8 @@ GpioCtlGet () {
 }
 
 # get the direction of a GPIO
-# 	$1 	- gpio pin
-#	return direction via echo
+#   $1  - gpio pin
+#   return direction via echo
 GpioCtlGetDirection () {
 	# read the sysfs file
 	local dir=$(cat $GpioBase/gpio$1/direction)
@@ -301,7 +358,7 @@ GpioCtl () {
 	# read the colour specified in the parameters
 	for key in $keys
 	do
-		if 	[ "$key" == "gpio" ]; then
+		if  [ "$key" == "gpio" ]; then
 			# get the key value
 			json_get_var gpio "$key"
 		elif [ "$key" == "value" ]; then
@@ -335,7 +392,7 @@ GpioCtl () {
 			;;
 			"set-direction")
 				local dir="out"
-				if 	[ "$value" == "input" ] ||
+				if  [ "$value" == "input" ] ||
 					[ "$value" == "in" ]; 
 				then
 					dir="in"
@@ -433,10 +490,10 @@ fi
 
 ## parse command line arguments
 case "$1" in
-    list)
+	list)
 		echo "{ $jsonWifiScan $jsonWifiSetup $jsonWdb40Setup $jsonOUpgrade $jsonDirList $jsonOmegaLed $jsonFastGpio $jsonI2cScan $jsonRgbLed $jsonGpio $jsonLaunchProcess $jsonStatus }"
-    ;;
-    call)
+	;;
+	call)
 		Log "Function: call, Method: $2"
 
 		case "$2" in
@@ -521,7 +578,7 @@ case "$1" in
 			;;
 			$cmdI2cScan)
 				# call the i2c-scan function
-				I2cScan	
+				I2cScan 
 			;;
 			$cmdRgbLed)
 				# read the json arguments
@@ -561,6 +618,6 @@ case "$1" in
 				echo '{"status":"good"}'
 		;;
 		esac
-    ;;
+	;;
 esac
 
