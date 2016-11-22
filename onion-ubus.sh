@@ -8,7 +8,8 @@
 #   argument 1: device for iwinfo
 WifiScan () {
 
-	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA2" ];
+	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA2" ] || 
+		[ "$(GetDeviceType)" == "$DEVICE_OMEGA2P" ];
 	then
 		(Omega2WifiScan "$1")
 	else
