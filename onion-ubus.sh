@@ -37,8 +37,8 @@ Omega2WifiScan () {
 		ssid=$(echo "${var:4:32}" | xargs)
 		bssid=$(echo "${var:37:19}" | xargs)
 		security=$(echo "${var:57:22}" | xargs)
-		encryption=${security%%/*}
-		auth=${security#*/}
+		encryption=${security#*/}
+		auth=${security%%/*}
 		signal=$(echo "${var:80:8}" | xargs)
 		wmode=$(echo "${var:89:7}" | xargs)
 		extch=$(echo "${var:97:6}" | xargs)
