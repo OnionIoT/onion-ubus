@@ -1,3 +1,5 @@
 # ignore the output directory
 rpcd/*
 
+# ignore upload tools
+tools/
