@@ -29,7 +29,7 @@ Omega2WifiScan () {
 
 	line=1
 
-	var=$(iwpriv $1 get_site_survey | grep '^[0-9]' | sed -n "${line}p")
+	var="nonempty"
 	while [ "$var" != "" ]
 	do
 		var=$(iwpriv $1 get_site_survey | grep '^[0-9]' | sed -n "${line}p")
