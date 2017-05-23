@@ -18,12 +18,14 @@ WifiScan () {
 }
 
 Omega2WifiScan () {
-	# json setup      
+	local networkDevice=$1
+    
+    # json setup
 	json_init
 	
 	json_add_array results
 
-	iwpriv $1 set SiteSurvey=1
+	iwpriv $networkDevice set SiteSurvey=1
 
 	sleep 1
 
@@ -32,7 +34,7 @@ Omega2WifiScan () {
 	var="nonempty"
 	while [ "$var" != "" ]
 	do
-		var=$(iwpriv $1 get_site_survey | grep '^[0-9]' | sed -n "${line}p")
+		var=$(iwpriv $networkDevice get_site_survey | grep '^[0-9]' | sed -n "${line}p")
 		ch=$(echo "${var:0:3}" | xargs)
 		ssid=$(echo "${var:4:32}" | xargs)
 		bssid=$(echo "${var:37:19}" | xargs)
