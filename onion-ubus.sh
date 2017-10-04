@@ -17,6 +17,28 @@ WifiScan () {
 	fi
 }
 
+Omega2WifiScanNormalizeEncryption () {
+	local input=$1
+	local output=""
+
+	case "$input" in
+		WPA1PSKWPA2PSK|WPA2PSK|wpa2|psk2|WPA2|PSK2)
+		output="psk2"
+		;;
+		WPA1PSK|wpa|psk|WPA|PSK)
+		output="psk"
+		;;
+		wep|WEP)
+		output="wep"
+		;;
+		none|*)
+		output="none"
+		;;
+	esac
+	
+	echo $output
+}
+
 Omega2WifiScan () {
 	local networkDevice=$1
     
@@ -39,8 +61,9 @@ Omega2WifiScan () {
 		ssid=$(echo "${var:4:32}" | xargs)
 		bssid=$(echo "${var:37:19}" | xargs)
 		security=$(echo "${var:57:22}" | xargs)
-		encryption=${security#*/}
-		auth=${security%%/*}
+		cipher=${security#*/}
+		encryptionString=${security%%/*}
+		encryption=$(Omega2WifiScanNormalizeEncryption $encryptionString)
 		signal=$(echo "${var:80:8}" | xargs)
 		wmode=$(echo "${var:89:7}" | xargs)
 		extch=$(echo "${var:97:6}" | xargs)
@@ -49,7 +72,8 @@ Omega2WifiScan () {
 			json_add_string "channel" "$ch"
 			json_add_string "ssid" "$ssid"
 			json_add_string "bssid" "$bssid"
-			json_add_string "authentication" "$auth"
+			json_add_string "cipher" "$cipher"
+			json_add_string "encryptionString" "$encryptionString"
 			json_add_string "encryption" "$encryption"
 			json_add_string "signalStrength" "$signal"
 			json_add_string "wirelessMode" "$wmode"
