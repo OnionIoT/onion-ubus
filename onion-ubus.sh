@@ -8,7 +8,7 @@
 #   argument 1: device for iwinfo
 WifiScan () {
 
-	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA2" ] || 
+	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA2" ] ||
 		[ "$(GetDeviceType)" == "$DEVICE_OMEGA2P" ];
 	then
 		(Omega2WifiScan "$1")
@@ -35,16 +35,16 @@ Omega2WifiScanNormalizeEncryption () {
 		output="none"
 		;;
 	esac
-	
+
 	echo $output
 }
 
 Omega2WifiScan () {
 	local networkDevice=$1
-    
+
     # json setup
 	json_init
-	
+
 	json_add_array results
 
 	iwpriv $networkDevice set SiteSurvey=1
@@ -67,7 +67,10 @@ Omega2WifiScan () {
 		signal=$(echo "${var:80:8}" | xargs)
 		wmode=$(echo "${var:89:7}" | xargs)
 		extch=$(echo "${var:97:6}" | xargs)
-		if [ "$ssid" != "" ]; then
+		rssi=$(echo "${var:108:4}" | xargs)
+
+		# add to the json results array
+		if [ "$bssid" != "" ]; then
 			json_add_object
 			json_add_string "channel" "$ch"
 			json_add_string "ssid" "$ssid"
@@ -78,6 +81,7 @@ Omega2WifiScan () {
 			json_add_string "signalStrength" "$signal"
 			json_add_string "wirelessMode" "$wmode"
 			json_add_string "ext-ch" "$extch"
+			json_add_string "rssi" "$rssi"
 			json_close_object
 		fi
 		line=$((line + 1))
@@ -95,9 +99,9 @@ Omega1WifiScan () {
 	#	networks looks like ssid1:encr1;ssid2:encr2;ssid3:encr3
 	networks=$(iwinfo wlan0 scan | grep 'ESSID\|Encryption' | awk '{printf "%s", $0; if (getline) print " " $0; else printf "\n"}' | sed -e 's/[[:space:]]*E/E/g' -e 's/\"//g' -e 's/ESSID\: //g' -e 's/Encryption\: /:/g' -e 's/$/;/' |  sed -e ':a;N;$!ba;s/\n//g')
 
-	# json setup      
+	# json setup
 	json_init
-	
+
 	# create the results array
 	json_add_array results
 
@@ -115,7 +119,7 @@ Omega1WifiScan () {
 		# modify hidden networks to be an empty string
 		if [ "$ssid" == "unknown" ]; then
 			ssid=""
-		fi 
+		fi
 
 		# create and populate object for this network
 		json_add_object
@@ -136,7 +140,7 @@ Omega1WifiScan () {
 WifiSetup () {
 	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject)
-	
+
 	# call wifisetup with the arguments (and -u for json output)
 	cmd="wifisetup -u $argumentString"
 	eval "$cmd"
@@ -151,7 +155,7 @@ Wdb40Setup () {
 
 	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject nodash)
-	
+
 	# call wifisetup with the arguments (and -u for json output)
 	Log "Running wdb40setup $cmd $argumentString"
 	cmd="wifisetup --json $cmd $argumentString"
@@ -174,12 +178,12 @@ OUpgrade () {
 DirList () {
 	bExists=0
 
-	# json setup           
+	# json setup
 	json_init
-	
+
 	# create the directory array
 	json_add_array directories
-	
+
 	# check if the directory exists
 	if [ -d $1 ]
 	then
@@ -188,10 +192,10 @@ DirList () {
 
 		# go to the directory
 		cd $1
-		
-		# grab all the directories and correct the formatting                          
+
+		# grab all the directories and correct the formatting
 		dirs=`find . -type d -maxdepth 1 -mindepth 1 | sed -e 's/\.\///' | tr '\n' ';'`
-		
+
 		# split the list of directories
 		rest=$dirs
 		while [ "$rest" != "" ]
@@ -201,12 +205,12 @@ DirList () {
 
 			# val now holds a directory
 			json_add_string "dir" "$val"
-		done    
+		done
 	fi
 
 	# finish the array
 	json_close_array
-	
+
 	# add the note that the directory exists
 	json_add_boolean exists $bExists
 
@@ -258,7 +262,7 @@ omegaLed () {
 
 	# check if returning the possible trigger options (check this)
 	if  [ "$readTriggers" != "" ] &&
-		[ "$readTriggers" == 1 ]; 
+		[ "$readTriggers" == 1 ];
 	then
 		omegaLedRead $triggerFile
 	fi
@@ -278,7 +282,7 @@ FastGpio () {
 	local argumentString=$(_ParseArgumentsObject "nodash")
 	argumentString=`echo $argumentString | sed -e 's/_/-/'`
 	Log "arguments: $argumentString"
-	
+
 	# call wifisetup with the arguments (and -u for json output)
 	cmd="fast-gpio -u $argumentString"
 	Log "$cmd"
@@ -292,7 +296,7 @@ I2cScan () {
 
 	# generate a json array using text
 	json='{"devices":['
-	
+
 	# add each device address to the array
 	for addr in $addrs
 	do
@@ -308,7 +312,7 @@ I2cScan () {
 
 # function to program the RGB LED on the Expansion Dock
 RgbLed () {
-	# find the command 
+	# find the command
 	json_get_var cmd "command"
 	local colour=""
 
@@ -372,7 +376,7 @@ GpioCtlGetDirection () {
 
 
 GpioCtl () {
-	# find the command 
+	# find the command
 	json_get_var cmd command
 	local gpio=""
 	local value=""
@@ -400,12 +404,12 @@ GpioCtl () {
 		echo "$gpio" > $GpioBase/export
 
 		# perform the action
-		case "$cmd" in 
+		case "$cmd" in
 			"set")
 				# set the gpio to the selected value
 				if [ "$value" == "0" ]; then
 					echo "0" > $GpioBase/gpio$gpio/value
-				else 
+				else
 					echo "1" > $GpioBase/gpio$gpio/value
 				fi
 
@@ -420,7 +424,7 @@ GpioCtl () {
 			"set-direction")
 				local dir="out"
 				if  [ "$value" == "input" ] ||
-					[ "$value" == "in" ]; 
+					[ "$value" == "in" ];
 				then
 					dir="in"
 				fi
@@ -452,7 +456,7 @@ GpioCtl () {
 }
 
 LaunchProcess () {
-	# find the command 
+	# find the command
 	json_get_var cmd command
 
 	# set the command to run in the background
@@ -605,7 +609,7 @@ case "$1" in
 			;;
 			$cmdI2cScan)
 				# call the i2c-scan function
-				I2cScan 
+				I2cScan
 			;;
 			$cmdRgbLed)
 				# read the json arguments
@@ -647,4 +651,3 @@ case "$1" in
 		esac
 	;;
 esac
-
