@@ -64,10 +64,11 @@ Omega2WifiScan () {
 		cipher=${security#*/}
 		encryptionString=${security%%/*}
 		encryption=$(Omega2WifiScanNormalizeEncryption $encryptionString)
-		signal=$(echo "${var:80:8}" | xargs)
-		wmode=$(echo "${var:89:7}" | xargs)
-		extch=$(echo "${var:97:6}" | xargs)
-		rssi=$(echo "${var:108:4}" | xargs)
+		rssi=$(echo "${var:80:5}" | xargs)
+		signal=$(echo "${var:86:8}" | xargs)
+		wmode=$(echo "${var:95:7}" | xargs)
+		extch=$(echo "${var:103:6}" | xargs)
+
 
 		# add to the json results array
 		if [ "$bssid" != "" ]; then
