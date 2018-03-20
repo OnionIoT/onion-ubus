@@ -10,7 +10,7 @@ WifiScan () {
 
 	if [ "$(GetDeviceType)" == "$DEVICE_OMEGA" ];
 	then
-		(Omega1WifiScan "$1")	
+		(Omega1WifiScan "$1")
 	else
 		(Omega2WifiScan "$1")
 	fi
@@ -138,11 +138,22 @@ Omega1WifiScan () {
 # function to setup wifi connection
 #   run 'wifisetup -help' for info on the arguments
 WifiSetup () {
+	# find the command
+	local cmd=""
+	json_get_var cmd "command"
+	# check for base64
+	local arg=""
+	local base64=""
+	json_get_var base64 "base64"
+	if [ $base64 -eq 1 ]; then
+		arg="$arg -b64"
+	fi
+
 	# parse the arguments object
 	local argumentString=$(_ParseArgumentsObject)
 
 	# call wifisetup with the arguments (and -u for json output)
-	cmd="wifisetup -u $argumentString"
+	cmd="wifisetup -j $arg $cmd $argumentString"
 	eval "$cmd"
 }
 
@@ -283,7 +294,7 @@ FastGpio () {
 	argumentString=`echo $argumentString | sed -e 's/_/-/'`
 	Log "arguments: $argumentString"
 
-	# call wifisetup with the arguments (and -u for json output)
+	# call fast-gpio with the arguments (and -u for json output)
 	cmd="fast-gpio -u $argumentString"
 	Log "$cmd"
 	eval "$cmd"
