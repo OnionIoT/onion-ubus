@@ -26,12 +26,22 @@ Sample return:
 Ubus interface for the `wifisetup` application.
 
 ## Usage
-`ubus call onion wifi-setup '{"params":{"argument":"argument value"}'`
+`ubus call onion wifi-setup '{"command":"command name", "base64":false, "params":{"argument":"argument value"}'`
+
+* `command`
+  * Specifies what operation wifisetup is meant to perform
+* `base64`
+  * Specifies if params arguments are base64 encoded
+  * Default is false
+* `params`
+  * Additional parameter arguments to be passed to wifisetup script
+  
+Run `wifisetup --help` on the Omega to get a better idea of what is available
 
 ## Example
 Connect to network called MyNetwork with PSK2 password that is superduper:
 ```
-ubus call onion wifi-setup '{"params":{"ssid":"MyNetwork", "auth":"psk2", "password":"superduper"}}'
+ubus call onion wifi-setup '{"command":"add", "base64":false, "params":{"ssid":"MyNetwork", "auth":"psk2", "password":"superduper"}}'
 ```
 
 *Lazar to expand*
