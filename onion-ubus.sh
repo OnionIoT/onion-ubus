@@ -24,7 +24,7 @@ Omega2WifiScanNormalizeEncryption () {
 		WPA1PSKWPA2PSK|WPA2PSK|wpa2|psk2|WPA2|PSK2)
 		output="psk2"
 		;;
-		WPA1PSK|wpa|psk|WPA|PSK)
+		WPA1PSK|WPAPSK|wpa|psk|WPA|PSK)
 		output="psk"
 		;;
 		wep|WEP)
