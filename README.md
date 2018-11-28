@@ -26,7 +26,7 @@ Sample return:
 Ubus interface for the `wifisetup` application.
 
 ## Usage
-`ubus call onion wifi-setup '{"command":"command name", "base64":false, "params":{"argument":"argument value"}'`
+`ubus call onion wifi-setup '{"command":"command name", "base64":false, "params":{"argument":"argument value"}}'`
 
 * `command`
   * Specifies what operation wifisetup is meant to perform
@@ -52,7 +52,7 @@ ubus call onion wifi-setup '{"command":"add", "base64":false, "params":{"ssid":"
 Ubus interface for the `oupgrade` application.
 
 ## Usage
-`ubus call onion oupgrade '{"params":{"argument":"argument value"}'`
+`ubus call onion oupgrade '{"params":{"argument":"argument value"}}'`
 
 ## Example
 Force a firmware upgrade
